@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+
+    environment {
+        SERVER = "ubuntu@32.192.71.207"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo 'Repository checked out'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh '''
+                mkdir -p build
+                cp -r "cafe-menu-main (1)/cafe-menu-main/"* build/
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                scp -o StrictHostKeyChecking=no -r build/* $SERVER:/tmp/
+
+                ssh -o StrictHostKeyChecking=no $SERVER "
+                sudo rm -rf /var/www/html/*
+                sudo cp -r /tmp/* /var/www/html/
+                sudo systemctl restart apache2
+                "
+                '''
+            }
+        }
+    }
+}
