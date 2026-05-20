@@ -1,0 +1,67 @@
+pipeline {
+    agent any
+
+    environment {
+        REPO_URL = 'https://github.com/lokeshmacha46/cafe-menu-demo.git'
+        BRANCH = 'main'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git branch: "${BRANCH}", url: "${REPO_URL}"
+            }
+        }
+
+        stage('Validate Files') {
+            steps {
+                sh '''
+                    echo "Checking project files..."
+
+                    test -f index.html || exit 1
+
+                    echo "HTML file found"
+                '''
+            }
+        }
+
+        stage('Package') {
+            steps {
+                sh '''
+                    mkdir -p build
+                    cp -r * build/ || true
+                '''
+            }
+        }
+
+        stage('Archive Artifacts') {
+            steps {
+                archiveArtifacts artifacts: 'build/**', fingerprint: true
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deployment stage (add server commands here)'
+
+                // Example deployment:
+                // sh 'scp -r build/* user@server:/var/www/html/'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build completed successfully'
+        }
+
+        failure {
+            echo 'Build failed'
+        }
+
+        always {
+            cleanWs()
+        }
+    }
+}
