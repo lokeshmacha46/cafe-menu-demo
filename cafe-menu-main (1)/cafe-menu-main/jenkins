@@ -2,66 +2,49 @@ pipeline {
     agent any
 
     environment {
-        REPO_URL = 'https://github.com/lokeshmacha46/cafe-menu-demo.git'
-        BRANCH = 'main'
+        SERVER = "ubuntu@32.192.71.207"
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                git branch: "${BRANCH}", url: "${REPO_URL}"
+                git branch: 'main',
+                url: 'https://github.com/lokeshmacha46/cafe-menu-demo.git'
             }
         }
 
-        stage('Validate Files') {
-            steps {
-                sh '''
-                    echo "Checking project files..."
-
-                    test -f index.html || exit 1
-
-                    echo "HTML file found"
-                '''
-            }
-        }
-
-        stage('Package') {
+        stage('Build') {
             steps {
                 sh '''
                     mkdir -p build
-                    cp -r * build/ || true
+                    cp -r "cafe-menu-main (1)/cafe-menu-main/"* build/
                 '''
-            }
-        }
-
-        stage('Archive Artifacts') {
-            steps {
-                archiveArtifacts artifacts: 'build/**', fingerprint: true
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deployment stage (add server commands here)'
+                sh '''
+                    scp -o StrictHostKeyChecking=no -r build/* $SERVER:/tmp/
 
-                // Example deployment:
-                // sh 'scp -r build/* user@server:/var/www/html/'
+                    ssh -o StrictHostKeyChecking=no $SERVER '
+                    sudo rm -rf /var/www/html/*
+                    sudo cp -r /tmp/* /var/www/html/
+                    sudo systemctl restart apache2
+                    '
+                '''
             }
         }
     }
 
     post {
         success {
-            echo 'Build completed successfully'
+            echo "Cafe website deployed successfully"
         }
 
         failure {
-            echo 'Build failed'
-        }
-
-        always {
-            cleanWs()
+            echo "Deployment failed"
         }
     }
 }
