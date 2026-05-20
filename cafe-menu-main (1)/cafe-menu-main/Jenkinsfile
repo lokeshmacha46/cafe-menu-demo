@@ -7,18 +7,13 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
-            steps {
-                git branch: 'main',
-                url: 'https://github.com/lokeshmacha46/cafe-menu-demo.git'
-            }
-        }
-
         stage('Build') {
             steps {
                 sh '''
                     mkdir -p build
-                    cp -r "cafe-menu-main (1)/cafe-menu-main/"* build/
+                    cp index.html build/
+                    cp style.css build/
+                    cp script.js build/
                 '''
             }
         }
@@ -28,23 +23,13 @@ pipeline {
                 sh '''
                     scp -o StrictHostKeyChecking=no -r build/* $SERVER:/tmp/
 
-                    ssh -o StrictHostKeyChecking=no $SERVER '
+                    ssh -o StrictHostKeyChecking=no $SERVER "
                     sudo rm -rf /var/www/html/*
                     sudo cp -r /tmp/* /var/www/html/
                     sudo systemctl restart apache2
-                    '
+                    "
                 '''
             }
-        }
-    }
-
-    post {
-        success {
-            echo "Cafe website deployed successfully"
-        }
-
-        failure {
-            echo "Deployment failed"
         }
     }
 }
